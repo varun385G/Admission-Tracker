@@ -1,0 +1,10 @@
+{
+  "name": "admission-tracker",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "npm run build && node backend/src/server.js",
+    "build": "cd frontend && npm install && npm run build",
+    "dev": "cd frontend && npm install && npm run build && cd .. && node backend/src/server.js",
+    "install-deps": "cd backend && npm install && cd ../frontend && npm install"
+  }
+}
