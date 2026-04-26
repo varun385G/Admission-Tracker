@@ -1,13 +1,3 @@
-// ─── CONFIG (no .env file needed) ───────────────────────────────────────────
-process.env.MONGODB_URI          = 'mongodb+srv://stmsuser:stms12345@stms.astrbub.mongodb.net/admission_tracker?retryWrites=true&w=majority&appName=STMS';
-process.env.JWT_SECRET           = 'admission_tracker_jwt_secret_key_2024';
-process.env.REFRESH_TOKEN_SECRET = 'admission_tracker_refresh_secret_key_2024';
-process.env.JWT_EXPIRES_IN       = '15m';
-process.env.REFRESH_TOKEN_EXPIRES_IN = '7d';
-process.env.NODE_ENV             = 'production';
-process.env.PORT                 = '3000';
-process.env.ALLOWED_ORIGINS      = 'http://localhost:3000';
-
 const express      = require('express');
 const mongoose     = require('mongoose');
 const cors         = require('cors');

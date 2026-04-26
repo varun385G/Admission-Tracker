@@ -18,8 +18,8 @@ const generateTokens = (userId) => {
 const setRefreshCookie = (res, token) => {
   res.cookie('refreshToken', token, {
     httpOnly: true,
-    secure: false,        // ← fixed: allow on http localhost
-    sameSite: 'Lax',     // ← fixed: Strict blocks on some browsers
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 };
@@ -101,7 +101,6 @@ const refresh = async (req, res) => {
 
     setRefreshCookie(res, newRefreshToken);
 
-    // ← fixed: also return user data so frontend keeps session after refresh
     res.json({
       accessToken,
       user: { id: user._id, name: user.name, email: user.email, role: user.role },
