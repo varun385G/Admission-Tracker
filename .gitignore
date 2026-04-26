@@ -1,4 +1,5 @@
 node_modules/
 frontend/build/
-.env
+backend/.env
+backend/.env.example
 .seeded
