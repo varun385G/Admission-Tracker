@@ -24,7 +24,7 @@ app.use(cookieParser());
 
 // ─── RATE LIMITING ───────────────────────────────────────────────────────────
 const generalLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 500 });
-const authLimiter    = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: 'Too many login attempts' } });
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 50, message: { error: 'Too many login attempts' } });
 app.use(generalLimiter);
 
 // ─── API ROUTES ──────────────────────────────────────────────────────────────
