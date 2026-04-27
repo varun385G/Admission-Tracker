@@ -1,24 +1,26 @@
 import React, { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
-  const { user, login } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: 'admin@college.com', password: 'Admin@123' });
+  const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
-
-  if (user) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!form.email || !form.password) {
+      toast.error('Please enter email and password');
+      return;
+    }
     setLoading(true);
     try {
       await login(form.email, form.password);
       navigate('/');
     } catch (err) {
-      const msg = err.response?.data?.error || 'Login failed';
+      const msg = err.response?.data?.error || 'Login failed. Check your credentials.';
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -60,6 +62,7 @@ export default function LoginPage() {
                 onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
                 style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff' }}
                 placeholder="your@email.com"
+                autoComplete="email"
               />
             </div>
             <div className="form-group">
@@ -68,6 +71,7 @@ export default function LoginPage() {
                 onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
                 style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff' }}
                 placeholder="••••••••"
+                autoComplete="current-password"
               />
             </div>
             <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={loading}
@@ -75,13 +79,11 @@ export default function LoginPage() {
               {loading ? 'Signing in…' : 'Sign In'}
             </button>
           </form>
-
-          <div style={{ marginTop: 24, padding: '16px', background: 'rgba(46,117,182,0.1)', borderRadius: 8, border: '1px solid rgba(46,117,182,0.2)' }}>
-            <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>Demo credentials</p>
-            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12 }}>Admin: admin@college.com / Admin@123</p>
-            <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 2 }}>Staff: priya@college.com / Staff@123</p>
-          </div>
         </div>
+
+        <p style={{ textAlign: 'center', marginTop: 20, color: 'rgba(255,255,255,0.25)', fontSize: 12 }}>
+          Contact your admin if you forgot your password
+        </p>
       </div>
     </div>
   );

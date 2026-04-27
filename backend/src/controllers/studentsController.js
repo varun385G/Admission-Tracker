@@ -16,11 +16,12 @@ const maskPhone = (phone) => {
 const sanitize = (str) => str ? str.replace(/<[^>]*>/g, '').trim() : str;
 
 const getStudents = async (req, res) => {
-  const { page = 1, limit = 20, search, status, course, staff_id, from, to } = req.query;
+  const { page = 1, limit = 20, search, status, staff_id, from, to } = req.query;
   const isAdmin = req.user.role === 'admin';
 
   const filter = { is_deleted: false };
 
+  // Staff only see their own students
   if (!isAdmin) {
     filter.assigned_staff_id = req.user.id;
   } else if (staff_id) {
@@ -32,10 +33,10 @@ const getStudents = async (req, res) => {
       { name: { $regex: search, $options: 'i' } },
       { email: { $regex: search, $options: 'i' } },
       { phone: { $regex: search, $options: 'i' } },
+      { application_number: { $regex: search, $options: 'i' } },
     ];
   }
   if (status) filter.status = status;
-  if (course) filter.course_interested = course;
   if (from || to) {
     filter.created_at = {};
     if (from) filter.created_at.$gte = new Date(from);
@@ -56,7 +57,7 @@ const getStudents = async (req, res) => {
       id: s._id,
       assigned_staff_id: s.assigned_staff_id?._id,
       staff_name: s.assigned_staff_id?.name,
-      phone: maskPhone(s.phone),
+      phone: isAdmin ? s.phone : maskPhone(s.phone),
     }));
 
     res.json({
@@ -93,21 +94,35 @@ const getStudent = async (req, res) => {
 };
 
 const createStudent = async (req, res) => {
+  const isAdmin = req.user.role === 'admin';
   const {
-    name, email, phone, course_interested, status, assigned_staff_id,
-    twelfth_percentage, entrance_score, counselling_date, next_followup_date,
+    name, email, phone, alt_phone, application_number, gender, aadhar_no,
+    community, caste, status, assigned_staff_id,
+    twelfth_percentage, total_score, obtained_score, subject_marks,
+    counselling_date, applied_date, submitted_date, next_followup_date,
     lead_source, notes
   } = req.body;
 
   try {
+    // Staff can only add students assigned to themselves
+    const staffId = isAdmin
+      ? (assigned_staff_id || null)
+      : req.user.id;
+
     const student = await Student.create({
       name: sanitize(name), email, phone,
-      course_interested: sanitize(course_interested),
+      alt_phone: sanitize(alt_phone),
+      application_number: sanitize(application_number),
+      gender, aadhar_no, community: sanitize(community), caste: sanitize(caste),
       status: status || 'New Enquiry',
-      assigned_staff_id: assigned_staff_id || null,
+      assigned_staff_id: staffId,
       twelfth_percentage: twelfth_percentage || null,
-      entrance_score: entrance_score || null,
+      total_score: total_score || null,
+      obtained_score: obtained_score || null,
+      subject_marks: Array.isArray(subject_marks) ? subject_marks : [],
       counselling_date: counselling_date || null,
+      applied_date: applied_date || null,
+      submitted_date: submitted_date || null,
       next_followup_date: next_followup_date || null,
       lead_source: sanitize(lead_source),
       notes: sanitize(notes),
@@ -137,25 +152,42 @@ const updateStudent = async (req, res) => {
 
     let updateData;
     if (isAdmin) {
-      const { name, email, phone, course_interested, status, assigned_staff_id, twelfth_percentage, entrance_score, counselling_date, next_followup_date, lead_source } = req.body;
+      const {
+        name, email, phone, alt_phone, application_number, gender, aadhar_no,
+        community, caste, status, assigned_staff_id,
+        twelfth_percentage, total_score, obtained_score, subject_marks,
+        counselling_date, applied_date, submitted_date, next_followup_date, lead_source, notes
+      } = req.body;
       updateData = {
         name: sanitize(name) || existing.name,
         email: email || existing.email,
         phone: phone || existing.phone,
-        course_interested: sanitize(course_interested) || existing.course_interested,
+        alt_phone: sanitize(alt_phone),
+        application_number: sanitize(application_number),
+        gender: gender || existing.gender,
+        aadhar_no: aadhar_no || existing.aadhar_no,
+        community: sanitize(community),
+        caste: sanitize(caste),
         status: status || existing.status,
         assigned_staff_id: assigned_staff_id || existing.assigned_staff_id,
         twelfth_percentage: twelfth_percentage ?? existing.twelfth_percentage,
-        entrance_score: entrance_score ?? existing.entrance_score,
+        total_score: total_score ?? existing.total_score,
+        obtained_score: obtained_score ?? existing.obtained_score,
+        subject_marks: Array.isArray(subject_marks) ? subject_marks : existing.subject_marks,
         counselling_date: counselling_date || existing.counselling_date,
+        applied_date: applied_date || existing.applied_date,
+        submitted_date: submitted_date || existing.submitted_date,
         next_followup_date: next_followup_date || existing.next_followup_date,
         lead_source: sanitize(lead_source) || existing.lead_source,
+        notes: sanitize(notes),
       };
     } else {
-      const { status, next_followup_date } = req.body;
+      // Staff can update status, followup date, and notes only
+      const { status, next_followup_date, notes } = req.body;
       updateData = {
         status: status || existing.status,
         next_followup_date: next_followup_date || existing.next_followup_date,
+        notes: sanitize(notes),
       };
     }
 
@@ -204,17 +236,25 @@ const exportCSV = async (req, res) => {
       .lean();
 
     const rows = students.map(s => ({
-      id: s._id,
+      application_number: s.application_number || '',
       name: s.name,
       email: s.email,
-      phone: maskPhone(s.phone),
-      course_interested: s.course_interested,
+      phone: s.phone,
+      alt_phone: s.alt_phone || '',
+      gender: s.gender || '',
+      aadhar_no: s.aadhar_no || '',
+      community: s.community || '',
+      caste: s.caste || '',
       status: s.status,
       assigned_staff: s.assigned_staff_id?.name || '',
-      twelfth_percentage: s.twelfth_percentage,
-      entrance_score: s.entrance_score,
-      lead_source: s.lead_source,
-      next_followup_date: s.next_followup_date,
+      twelfth_percentage: s.twelfth_percentage || '',
+      total_score: s.total_score || '',
+      obtained_score: s.obtained_score || '',
+      lead_source: s.lead_source || '',
+      applied_date: s.applied_date?.toISOString().split('T')[0] || '',
+      submitted_date: s.submitted_date?.toISOString().split('T')[0] || '',
+      counselling_date: s.counselling_date?.toISOString().split('T')[0] || '',
+      next_followup_date: s.next_followup_date?.toISOString().split('T')[0] || '',
       created_at: s.created_at,
     }));
 
@@ -258,7 +298,12 @@ const confirmUpload = async (req, res) => {
   const errors = [];
   for (const row of rows) {
     try {
-      await Student.create({ name: row.name, email: row.email, phone: row.phone, course_interested: row.course_interested, lead_source: row.lead_source });
+      await Student.create({
+        name: row.name, email: row.email, phone: row.phone,
+        application_number: row.application_number,
+        gender: row.gender, community: row.community, caste: row.caste,
+        lead_source: row.lead_source
+      });
       inserted++;
     } catch (e) {
       if (e.code !== 11000) errors.push({ row, error: e.message });

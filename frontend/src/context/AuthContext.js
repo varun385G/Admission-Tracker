@@ -11,9 +11,10 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await api.post('/auth/refresh');
       setAccessToken(res.data.accessToken);
-      setUser(res.data.user); // ← fixed: refresh now returns user too
+      setUser(res.data.user);
     } catch {
-      // Not logged in
+      // Not logged in — that's fine, show login page
+      setUser(null);
     } finally {
       setLoading(false);
     }

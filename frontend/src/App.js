@@ -32,9 +32,16 @@ function ProtectedRoute({ children, adminOnly }) {
 }
 
 function AppRoutes() {
+  const { user, loading } = useAuth();
+
+  // While checking session, show loader
+  if (loading) return <PageLoader />;
+
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      {/* If not logged in, /login shows login page. If logged in, redirect to dashboard */}
+      <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/" replace />} />
+
       <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         <Route index element={<DashboardPage />} />
         <Route path="students" element={<StudentsPage />} />
@@ -42,7 +49,9 @@ function AppRoutes() {
         <Route path="staff" element={<ProtectedRoute adminOnly><StaffPage /></ProtectedRoute>} />
         <Route path="reports" element={<ProtectedRoute adminOnly><ReportsPage /></ProtectedRoute>} />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+
+      {/* Any unknown URL → login if not logged in, dashboard if logged in */}
+      <Route path="*" element={user ? <Navigate to="/" replace /> : <Navigate to="/login" replace />} />
     </Routes>
   );
 }

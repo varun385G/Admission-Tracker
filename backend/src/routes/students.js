@@ -13,13 +13,13 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 *
 router.use(verifyToken);
 
 router.get('/', getStudents);
-router.post('/', requireAdmin, studentValidation, createStudent);
+router.post('/', studentValidation, createStudent);        // staff + admin can add
 router.get('/export/csv', requireAdmin, exportCSV);
 router.post('/bulk-status', requireAdmin, bulkUpdateStatus);
 router.post('/upload', requireAdmin, upload.single('file'), uploadCSV);
 router.post('/upload/confirm', requireAdmin, confirmUpload);
 router.get('/:id', getStudent);
-router.put('/:id', studentValidation, updateStudent);
+router.put('/:id', updateStudent);                         // staff can update their own
 router.delete('/:id', requireAdmin, deleteStudent);
 
 module.exports = router;
