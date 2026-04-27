@@ -13,14 +13,17 @@ export const AuthProvider = ({ children }) => {
       setAccessToken(res.data.accessToken);
       setUser(res.data.user);
     } catch {
-      // Not logged in — that's fine, show login page
       setUser(null);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { initialize(); }, [initialize]);
+  useEffect(() => {
+    // Add timeout so it never gets stuck loading forever
+    const timeout = setTimeout(() => setLoading(false), 5000);
+    initialize().finally(() => clearTimeout(timeout));
+  }, [initialize]);
 
   const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password });

@@ -15,11 +15,7 @@ import './index.css';
 
 const qc = new QueryClient({
   defaultOptions: {
-    queries: {
-      retry: 1,
-      staleTime: 30000,
-      refetchOnWindowFocus: false,
-    },
+    queries: { retry: 1, staleTime: 30000, refetchOnWindowFocus: false },
   },
 });
 
@@ -33,15 +29,11 @@ function ProtectedRoute({ children, adminOnly }) {
 
 function AppRoutes() {
   const { user, loading } = useAuth();
-
-  // While checking session, show loader
   if (loading) return <PageLoader />;
 
   return (
     <Routes>
-      {/* If not logged in, /login shows login page. If logged in, redirect to dashboard */}
-      <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/" replace />} />
-
+      <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
       <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
         <Route index element={<DashboardPage />} />
         <Route path="students" element={<StudentsPage />} />
@@ -49,10 +41,25 @@ function AppRoutes() {
         <Route path="staff" element={<ProtectedRoute adminOnly><StaffPage /></ProtectedRoute>} />
         <Route path="reports" element={<ProtectedRoute adminOnly><ReportsPage /></ProtectedRoute>} />
       </Route>
-
-      {/* Any unknown URL → login if not logged in, dashboard if logged in */}
-      <Route path="*" element={user ? <Navigate to="/" replace /> : <Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to={user ? "/" : "/login"} replace />} />
     </Routes>
+  );
+}
+
+function AppWithAuth() {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          duration: 3000,
+          style: { background: '#1a1a2e', color: '#fff', fontSize: 13, fontFamily: 'DM Sans,sans-serif', borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.3)' },
+          success: { iconTheme: { primary: '#27ae60', secondary: '#fff' } },
+          error: { iconTheme: { primary: '#e74c3c', secondary: '#fff' } },
+        }}
+      />
+    </AuthProvider>
   );
 }
 
@@ -60,18 +67,7 @@ export default function App() {
   return (
     <QueryClientProvider client={qc}>
       <BrowserRouter>
-        <AuthProvider>
-          <AppRoutes />
-          <Toaster
-            position="bottom-right"
-            toastOptions={{
-              duration: 3000,
-              style: { background: '#1a1a2e', color: '#fff', fontSize: 13, fontFamily: 'DM Sans,sans-serif', borderRadius: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.3)' },
-              success: { iconTheme: { primary: '#27ae60', secondary: '#fff' } },
-              error: { iconTheme: { primary: '#e74c3c', secondary: '#fff' } },
-            }}
-          />
-        </AuthProvider>
+        <AppWithAuth />
       </BrowserRouter>
     </QueryClientProvider>
   );
